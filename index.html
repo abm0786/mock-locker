@@ -351,6 +351,18 @@
 
   let mocks = []; // {id, title, content, uploadedAt}
   let renameTargetId = null;
+  let storageBroken = false;
+
+  function storageAvailable(){
+    try{
+      const testKey = '__mocklocker_test__';
+      localStorage.setItem(testKey, '1');
+      localStorage.removeItem(testKey);
+      return true;
+    }catch(e){
+      return false;
+    }
+  }
 
   function showToast(msg){
     toast.textContent = msg;
@@ -364,6 +376,10 @@
   }
 
   async function loadMocks(){
+    storageBroken = !storageAvailable();
+    if(storageBroken){
+      showToast('⚠️ Is app mode me storage kaam nahi kar raha. Chrome browser me use karo.');
+    }
     try{
       const raw = localStorage.getItem('mocklocker:index');
       if(raw){
@@ -504,13 +520,19 @@
 
         mocks.push({ id, title, uploadedAt });
       }catch(err){
-        showToast('Ek file fail ho gayi ya bahut badi hai: ' + file.name);
+        showToast('Fail: ' + (err && err.message ? err.message : String(err)));
+        console.error('Upload error:', err);
       }
     }
 
     render();
-    await saveIndex();
-    showToast(files.length + ' mock(s) saved.');
+    try{
+      localStorage.setItem('mocklocker:index', JSON.stringify(mocks));
+    }catch(err){
+      showToast('Index save fail: ' + (err && err.message ? err.message : String(err)));
+      console.error('Index save error:', err);
+    }
+    showToast(files.length + ' mock(s) saved. Total: ' + mocks.length);
     fileInput.value = '';
   });
 
