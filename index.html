@@ -365,9 +365,9 @@
 
   async function loadMocks(){
     try{
-      const res = await window.storage.get('mocklocker:index', false);
-      if(res && res.value){
-        mocks = JSON.parse(res.value);
+      const raw = localStorage.getItem('mocklocker:index');
+      if(raw){
+        mocks = JSON.parse(raw);
       }
     }catch(e){
       mocks = [];
@@ -377,7 +377,7 @@
 
   async function saveIndex(){
     try{
-      await window.storage.set('mocklocker:index', JSON.stringify(mocks), false);
+      localStorage.setItem('mocklocker:index', JSON.stringify(mocks));
     }catch(e){
       showToast('Save fail hua, storage error.');
     }
@@ -435,8 +435,7 @@
     let content = mock.content;
     if(!content){
       try{
-        const res = await window.storage.get('mocklocker:content:' + id, false);
-        content = res ? res.value : '';
+        content = localStorage.getItem('mocklocker:content:' + id) || '';
       }catch(e){
         showToast('Mock load nahi hua.');
         return;
@@ -461,7 +460,7 @@
     mocks = mocks.filter(m => m.id !== id);
     render();
     await saveIndex();
-    try{ await window.storage.delete('mocklocker:content:' + id, false); }catch(e){}
+    try{ localStorage.removeItem('mocklocker:content:' + id); }catch(e){}
     showToast('Delete ho gaya.');
   }
 
@@ -501,11 +500,11 @@
         const uploadedAt = new Date().toISOString();
 
         // store content separately (can be large)
-        await window.storage.set('mocklocker:content:' + id, text, false);
+        localStorage.setItem('mocklocker:content:' + id, text);
 
         mocks.push({ id, title, uploadedAt });
       }catch(err){
-        showToast('Ek file fail ho gayi: ' + file.name);
+        showToast('Ek file fail ho gayi ya bahut badi hai: ' + file.name);
       }
     }
 
