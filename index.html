@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Mock Locker</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1C1E26">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="MockLocker">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="icon-192.png">
+<style>
+  @font-face {
+    font-family: 'BarlowCond';
+    src: local('Barlow Condensed');
+  }
+  :root{
+    --ink:#1C1E26;
+    --paper:#F7F5F0;
+    --accent:#E8563C;
+    --muted:#6B7280;
+    --line:#D8D4C8;
+    --card:#FFFDF9;
+    --success:#1f9e5a;
+    --danger:#c82d3f;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color: transparent;}
+  html,body{margin:0; padding:0; background:var(--ink); color:var(--ink); font-family: 'Segoe UI', system-ui, sans-serif; overscroll-behavior-y: contain;}
+  body{min-height:100vh;}
+
+  /* ---------- Header ---------- */
+  .topbar{
+    position:sticky; top:0; z-index:20;
+    background:var(--ink);
+    color:var(--paper);
+    padding:16px 18px 14px;
+    display:flex; align-items:baseline; justify-content:space-between;
+    border-bottom:3px solid var(--accent);
+  }
+  .brand{
+    font-family: 'Barlow Condensed', 'Segoe UI', sans-serif;
+    font-weight:700;
+    font-size:26px;
+    letter-spacing:0.5px;
+    text-transform:uppercase;
+  }
+  .brand span{color:var(--accent);}
+  .count-pill{
+    font-size:11px;
+    color:var(--paper);
+    opacity:0.6;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ---------- Main scroll area ---------- */
+  .wrap{
+    background:var(--paper);
+    min-height:100vh;
+    padding:16px 14px 100px;
+  }
+
+  .empty{
+    margin-top:60px;
+    text-align:center;
+    color:var(--muted);
+    padding:0 20px;
+  }
+  .empty-mark{
+    font-family:'Barlow Condensed', sans-serif;
+    font-size:48px;
+    font-weight:700;
+    color:var(--line);
+    line-height:1;
+    margin-bottom:8px;
+  }
+  .empty p{font-size:14px; line-height:1.5; margin:6px 0 0;}
+
+  /* ---------- Mock Card (admit-card style) ---------- */
+  .grid{
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+  }
+  .card{
+    position:relative;
+    background:var(--card);
+    border:1.5px solid var(--line);
+    border-radius:10px;
+    padding:14px 16px 14px 18px;
+    display:flex;
+    align-items:center;
+    gap:12px;
+    overflow:hidden;
+    box-shadow: 0 1px 0 rgba(0,0,0,0.03);
+  }
+  /* perforated edge */
+  .card::before{
+    content:'';
+    position:absolute;
+    left:0; top:0; bottom:0;
+    width:3px;
+    background-image: radial-gradient(circle, var(--paper) 1.5px, transparent 1.6px);
+    background-size: 8px 10px;
+    background-position: -2.5px 0;
+  }
+  .card-main{flex:1; min-width:0;}
+  .card-title{
+    font-family:'Barlow Condensed', sans-serif;
+    font-weight:700;
+    font-size:19px;
+    letter-spacing:0.2px;
+    color:var(--ink);
+    margin:0 0 3px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .card-meta{
+    font-size:11.5px;
+    color:var(--muted);
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+  .stamp{
+    font-size:9px;
+    font-weight:700;
+    letter-spacing:1px;
+    color:var(--accent);
+    border:1px solid var(--accent);
+    border-radius:3px;
+    padding:1.5px 5px;
+    text-transform:uppercase;
+    flex-shrink:0;
+  }
+  .card-actions{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    flex-shrink:0;
+  }
+  .btn-open{
+    background:var(--ink);
+    color:var(--paper);
+    border:none;
+    font-family:'Barlow Condensed', sans-serif;
+    font-weight:700;
+    font-size:14px;
+    letter-spacing:0.5px;
+    text-transform:uppercase;
+    padding:9px 14px;
+    border-radius:7px;
+    white-space:nowrap;
+  }
+  .btn-del{
+    background:transparent;
+    border:none;
+    color:var(--muted);
+    font-size:19px;
+    line-height:1;
+    padding:6px;
+    width:32px; height:32px;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .btn-del:active{color:var(--accent);}
+
+  /* ---------- Tabs ---------- */
+  .tabs{
+    display:flex;
+    gap:0;
+    background:var(--card);
+    border-bottom:1.5px solid var(--line);
+    position:sticky;
+    top:65px;
+    z-index:15;
+  }
+  .tab{
+    flex:1;
+    text-align:center;
+    padding:12px 8px;
+    font-family:'Barlow Condensed', sans-serif;
+    font-weight:700;
+    font-size:14px;
+    letter-spacing:0.4px;
+    text-transform:uppercase;
+    color:var(--muted);
+    border-bottom:3px solid transparent;
+  }
+  .tab.active{
+    color:var(--ink);
+    border-bottom-color:var(--accent);
+  }
+  .tab .badge{
+    display:inline-block;
+    margin-left:5px;
+    background:var(--accent);
+    color:#fff;
+    font-size:10px;
+    padding:1px 6px;
+    border-radius:20px;
+    font-weight:700;
+  }
+
+  /* ---------- Wrong Question Card ---------- */
+  .wq-card{
+    background:var(--card);
+    border:1.5px solid var(--line);
+    border-radius:10px;
+    padding:14px 16px;
+    margin-bottom:12px;
+  }
+  .wq-meta{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:8px;
+  }
+  .wq-source{
+    font-size:11px;
+    color:var(--muted);
+    font-weight:600;
+  }
+  .wq-status{
+    font-size:9px;
+    font-weight:700;
+    letter-spacing:0.5px;
+    text-transform:uppercase;
+    padding:2px 7px;
+    border-radius:4px;
+  }
+  .wq-status.wrong{background:rgba(200,45,63,0.12); color:var(--danger);}
+  .wq-status.unattempted{background:rgba(107,114,128,0.15); color:var(--muted);}
+  .wq-question{font-size:14.5px; line-height:1.5; margin-bottom:10px; color:var(--ink);}
+  .wq-question img{max-width:100%; height:auto;}
+  .wq-opt{
+    font-size:13.5px;
+    padding:7px 10px;
+    margin:5px 0;
+    border-radius:7px;
+    border:1px solid #eee;
+    background:#fafbfd;
+  }
+  .wq-opt.correct{border-color:var(--success); background:rgba(31,158,90,0.1);}
+  .wq-opt.user-wrong{border-color:var(--danger); background:rgba(200,45,63,0.1);}
+  .wq-explain{
+    margin-top:8px;
+    padding:9px 10px;
+    background:#fbfdfe;
+    border:1px solid #edf2f3;
+    border-radius:7px;
+    font-size:13px;
+    color:var(--muted);
+  }
+  .wq-empty{
+    text-align:center;
+    color:var(--muted);
+    padding:60px 20px 0;
+    font-size:14px;
+    line-height:1.6;
+  }
+
+  /* ---------- FAB Upload ---------- */
+  .fab{
+    position:fixed;
+    right:18px; bottom:22px;
+    z-index:30;
+    background:var(--accent);
+    color:#fff;
+    border:none;
+    border-radius:50px;
+    padding:15px 22px 15px 18px;
+    display:flex; align-items:center; gap:8px;
+    font-family:'Barlow Condensed', sans-serif;
+    font-weight:700;
+    font-size:16px;
+    letter-spacing:0.5px;
+    text-transform:uppercase;
+    box-shadow:0 6px 16px rgba(232,86,60,0.4);
+  }
+  .fab:active{transform:scale(0.97);}
+  .fab svg{width:20px; height:20px;}
+  #fileInput{display:none;}
+
+  /* ---------- Toast ---------- */
+  .toast{
+    position:fixed;
+    left:50%; bottom:90px;
+    transform:translateX(-50%) translateY(10px);
+    background:var(--ink);
+    color:var(--paper);
+    font-size:13px;
+    padding:10px 18px;
+    border-radius:8px;
+    opacity:0;
+    transition:opacity 0.25s, transform 0.25s;
+    z-index:40;
+    pointer-events:none;
+    white-space:nowrap;
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+
+  /* ---------- Viewer (fullscreen mock display) ---------- */
+  .viewer{
+    position:fixed; inset:0;
+    background:#fff;
+    z-index:50;
+    display:none;
+    flex-direction:column;
+  }
+  .viewer.open{display:flex;}
+  .viewer-bar{
+    background:var(--ink);
+    color:var(--paper);
+    padding:12px 14px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex-shrink:0;
+  }
+  .viewer-back{
+    background:none; border:none; color:var(--paper);
+    font-size:22px; padding:2px 8px 2px 2px; line-height:1;
+  }
+  .viewer-title{
+    font-family:'Barlow Condensed', sans-serif;
+    font-weight:700;
+    font-size:16px;
+    flex:1;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .viewer-fullscreen{
+    background:none;
+    border:none;
+    color:var(--paper);
+    padding:6px;
+    width:34px; height:34px;
+    display:flex; align-items:center; justify-content:center;
+    flex-shrink:0;
+    border-radius:6px;
+  }
+  .viewer-fullscreen:active{background:rgba(247,245,240,0.15);}
+  .viewer-fullscreen svg{width:19px; height:19px;}
+  .viewer-fullscreen.active{color:var(--accent);}
+  .viewer iframe{
+    flex:1;
+    border:none;
+    width:100%;
+  }
+
+  /* ---------- Rename modal ---------- */
+  .modal-backdrop{
+    position:fixed; inset:0;
+    background:rgba(28,30,38,0.55);
+    z-index:60;
+    display:none;
+    align-items:flex-end;
+  }
+  .modal-backdrop.open{display:flex;}
+  .modal{
+    background:var(--paper);
+    width:100%;
+    border-radius:16px 16px 0 0;
+    padding:20px 18px 28px;
+  }
+  .modal h3{
+    font-family:'Barlow Condensed', sans-serif;
+    font-size:20px;
+    margin:0 0 14px;
+    text-transform:uppercase;
+  }
+  .modal input{
+    width:100%;
+    padding:12px 14px;
+    border:1.5px solid var(--line);
+    border-radius:8px;
+    font-size:15px;
+    background:#fff;
+    margin-bottom:14px;
+  }
+  .modal-row{display:flex; gap:10px;}
+  .modal-row button{
+    flex:1;
+    padding:12px;
+    border-radius:8px;
+    border:none;
+    font-family:'Barlow Condensed', sans-serif;
+    font-weight:700;
+    font-size:15px;
+    letter-spacing:0.4px;
+    text-transform:uppercase;
+  }
+  .modal-save{background:var(--ink); color:var(--paper);}
+  .modal-cancel{background:transparent; color:var(--muted); border:1.5px solid var(--line) !important;}
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="brand">Mock<span>Locker</span></div>
+    <div class="count-pill" id="countPill">0 saved</div>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" id="tabMocks">Mocks</div>
+    <div class="tab" id="tabWrong">Wrong Qs<span class="badge" id="wrongBadge" style="display:none">0</span></div>
+  </div>
+
+  <div class="wrap" id="mocksView">
+    <div id="emptyState" class="empty">
+      <div class="empty-mark">—</div>
+      <p>Koi mock abhi upload nahi hua.<br>Neeche "Upload" button se apni HTML mock file daalo.</p>
+    </div>
+    <div class="grid" id="grid"></div>
+  </div>
+
+  <div class="wrap" id="wrongView" style="display:none">
+    <div id="wrongEmpty" class="wq-empty">
+      Koi galat/unattempted question record nahi hai abhi.<br>Mock attempt karke submit karo, yahan automatically aa jayenge.
+    </div>
+    <div id="wrongList"></div>
+  </div>
+
+  <button class="fab" id="uploadBtn">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 4v12m0-12l-5 5m5-5l5 5M5 20h14"/></svg>
+    Upload
+  </button>
+  <input type="file" id="fileInput" accept=".html,.htm" multiple>
+
+  <div class="toast" id="toast"></div>
+
+  <!-- Fullscreen viewer -->
+  <div class="viewer" id="viewer">
+    <div class="viewer-bar">
+      <button class="viewer-back" id="viewerBack">‹</button>
+      <div class="viewer-title" id="viewerTitle">Mock</div>
+      <button class="viewer-fullscreen" id="viewerFullscreen" aria-label="Fullscreen">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3m11-5v3a2 2 0 0 1-2 2h-3"/></svg>
+      </button>
+    </div>
+    <iframe id="viewerFrame" sandbox="allow-scripts allow-forms allow-same-origin allow-modals allow-popups"></iframe>
+  </div>
+
+  <!-- Rename modal -->
+  <div class="modal-backdrop" id="modalBackdrop">
+    <div class="modal">
+      <h3>Rename Mock</h3>
+      <input type="text" id="renameInput" placeholder="Mock ka naam">
+      <div class="modal-row">
+        <button class="modal-cancel" id="renameCancel">Cancel</button>
+        <button class="modal-save" id="renameSave">Save</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+(function(){
+  window.addEventListener('error', (e)=>{
+    const div = document.createElement('div');
+    div.style.cssText = 'position:fixed;top:70px;left:10px;right:10px;background:#c82d3f;color:#fff;padding:10px;border-radius:8px;font-size:12px;z-index:999;';
+    div.textContent = 'JS Error: ' + e.message + ' (line ' + e.lineno + ')';
+    document.body.appendChild(div);
+  });
+try{
+  const grid = document.getElementById('grid');
+  const emptyState = document.getElementById('emptyState');
+  const countPill = document.getElementById('countPill');
+  const fileInput = document.getElementById('fileInput');
+  const uploadBtn = document.getElementById('uploadBtn');
+  const toast = document.getElementById('toast');
+  const viewer = document.getElementById('viewer');
+  const viewerFrame = document.getElementById('viewerFrame');
+  const viewerTitle = document.getElementById('viewerTitle');
+  const viewerBack = document.getElementById('viewerBack');
+  const viewerFullscreen = document.getElementById('viewerFullscreen');
+  const modalBackdrop = document.getElementById('modalBackdrop');
+  const renameInput = document.getElementById('renameInput');
+  const renameSave = document.getElementById('renameSave');
+  const renameCancel = document.getElementById('renameCancel');
+  const tabMocks = document.getElementById('tabMocks');
+  const tabWrong = document.getElementById('tabWrong');
+  const mocksView = document.getElementById('mocksView');
+  const wrongView = document.getElementById('wrongView');
+  const wrongList = document.getElementById('wrongList');
+  const wrongEmpty = document.getElementById('wrongEmpty');
+  const wrongBadge = document.getElementById('wrongBadge');
+
+  let mocks = []; // {id, title, content, uploadedAt}
+  let wrongQs = []; // {id, quizTitle, submittedAt, question, options, correctAnswer, userAnswer, status, solution}
+  let renameTargetId = null;
+  let storageBroken = false;
+
+  function storageAvailable(){
+    try{
+      const testKey = '__mocklocker_test__';
+      localStorage.setItem(testKey, '1');
+      localStorage.removeItem(testKey);
+      return true;
+    }catch(e){
+      return false;
+    }
+  }
+
+  function showToast(msg){
+    toast.textContent = msg;
+    toast.classList.add('show');
+    setTimeout(()=> toast.classList.remove('show'), 1800);
+  }
+
+  function fmtDate(iso){
+    const d = new Date(iso);
+    return d.toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
+  }
+
+  async function loadMocks(){
+    storageBroken = !storageAvailable();
+    if(storageBroken){
+      showToast('⚠️ Is app mode me storage kaam nahi kar raha. Chrome browser me use karo.');
+    }
+    try{
+      const raw = localStorage.getItem('mocklocker:index');
+      if(raw){
+        mocks = JSON.parse(raw);
+      }
+    }catch(e){
+      mocks = [];
+    }
+    render();
+  }
+
+  async function saveIndex(){
+    try{
+      localStorage.setItem('mocklocker:index', JSON.stringify(mocks));
+    }catch(e){
+      showToast('Save fail hua, storage error.');
+    }
+  }
+
+  function render(){
+    grid.innerHTML = '';
+    countPill.textContent = mocks.length + ' saved';
+    emptyState.style.display = mocks.length === 0 ? 'block' : 'none';
+
+    mocks.slice().reverse().forEach(mock => {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = `
+        <div class="card-main">
+          <p class="card-title">${escapeHtml(mock.title)}</p>
+          <div class="card-meta">
+            <span class="stamp">Mock</span>
+            <span>${fmtDate(mock.uploadedAt)}</span>
+          </div>
+        </div>
+        <div class="card-actions">
+          <button class="btn-open" data-id="${mock.id}">Open</button>
+          <button class="btn-del" data-id="${mock.id}" aria-label="Delete">×</button>
+        </div>
+      `;
+      grid.appendChild(card);
+    });
+
+    grid.querySelectorAll('.btn-open').forEach(btn=>{
+      btn.addEventListener('click', ()=> openMock(btn.dataset.id));
+    });
+    grid.querySelectorAll('.btn-del').forEach(btn=>{
+      btn.addEventListener('click', ()=> deleteMock(btn.dataset.id));
+    });
+    // long-press title area to rename (tap-and-hold)
+    grid.querySelectorAll('.card-main').forEach((el, idx)=>{
+      let timer;
+      const id = mocks.slice().reverse()[idx].id;
+      el.addEventListener('touchstart', ()=>{ timer = setTimeout(()=> openRename(id), 550); });
+      el.addEventListener('touchend', ()=> clearTimeout(timer));
+      el.addEventListener('touchmove', ()=> clearTimeout(timer));
+    });
+  }
+
+  function escapeHtml(str){
+    const d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+  }
+
+  async function openMock(id){
+    const mock = mocks.find(m => m.id === id);
+    if(!mock) return;
+    let content = mock.content;
+    if(!content){
+      try{
+        content = localStorage.getItem('mocklocker:content:' + id) || '';
+      }catch(e){
+        showToast('Mock load nahi hua.');
+        return;
+      }
+    }
+    const blob = new Blob([content], {type:'text/html'});
+    const url = URL.createObjectURL(blob);
+    viewerFrame.src = url;
+    viewerTitle.textContent = mock.title;
+    viewer.classList.add('open');
+  }
+
+  viewerBack.addEventListener('click', ()=>{
+    if(document.fullscreenElement) document.exitFullscreen().catch(()=>{});
+    viewer.classList.remove('open');
+    viewerFrame.src = 'about:blank';
+  });
+
+  viewerFullscreen.addEventListener('click', async ()=>{
+    try{
+      if(!document.fullscreenElement){
+        await viewer.requestFullscreen();
+      }else{
+        await document.exitFullscreen();
+      }
+    }catch(e){
+      showToast('Fullscreen is device pe support nahi hai.');
+    }
+  });
+
+  document.addEventListener('fullscreenchange', ()=>{
+    viewerFullscreen.classList.toggle('active', !!document.fullscreenElement);
+  });
+
+  async function deleteMock(id){
+    const mock = mocks.find(m => m.id === id);
+    if(!mock) return;
+    if(!confirm(`"${mock.title}" delete karna hai?`)) return;
+    mocks = mocks.filter(m => m.id !== id);
+    render();
+    await saveIndex();
+    try{ localStorage.removeItem('mocklocker:content:' + id); }catch(e){}
+    showToast('Delete ho gaya.');
+  }
+
+  function openRename(id){
+    renameTargetId = id;
+    const mock = mocks.find(m => m.id === id);
+    renameInput.value = mock ? mock.title : '';
+    modalBackdrop.classList.add('open');
+    setTimeout(()=> renameInput.focus(), 100);
+  }
+
+  renameCancel.addEventListener('click', ()=> modalBackdrop.classList.remove('open'));
+  modalBackdrop.addEventListener('click', (e)=>{ if(e.target === modalBackdrop) modalBackdrop.classList.remove('open'); });
+
+  renameSave.addEventListener('click', async ()=>{
+    const mock = mocks.find(m => m.id === renameTargetId);
+    if(mock && renameInput.value.trim()){
+      mock.title = renameInput.value.trim();
+      render();
+      await saveIndex();
+    }
+    modalBackdrop.classList.remove('open');
+  });
+
+  uploadBtn.addEventListener('click', ()=>{
+    console.log('Upload button clicked');
+    try{
+      fileInput.click();
+    }catch(err){
+      showToast('Upload open fail: ' + err.message);
+    }
+  });
+
+  fileInput.addEventListener('change', async (e)=>{
+    const files = Array.from(e.target.files);
+    if(files.length === 0) return;
+    showToast('Upload ho raha hai...');
+
+    for(const file of files){
+      try{
+        const text = await file.text();
+        const id = 'm_' + Date.now() + '_' + Math.random().toString(36).slice(2,8);
+        const title = file.name.replace(/\.html?$/i, '');
+        const uploadedAt = new Date().toISOString();
+
+        // store content separately (can be large)
+        localStorage.setItem('mocklocker:content:' + id, text);
+
+        mocks.push({ id, title, uploadedAt });
+      }catch(err){
+        showToast('Fail: ' + (err && err.message ? err.message : String(err)));
+        cons
